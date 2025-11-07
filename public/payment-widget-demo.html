@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TourPay Payment Widget - Coinbase Onramp Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .wallet-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .wallet-info h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .wallet-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .wallet-detail:last-child {
+            border-bottom: none;
+        }
+
+        .wallet-detail span:first-child {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .wallet-detail span:last-child {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .config {
+            background: #fff3cd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeaa7;
+        }
+
+        .config p {
+            font-size: 13px;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .config input {
+            font-size: 14px;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 TourPay Payment Widget</h1>
+            <p>Fund your wallet with Coinbase Onramp</p>
+        </div>
+
+        <div class="config">
+            <p><strong>Configuration</strong></p>
+            <label for="apiUrl">API URL:</label>
+            <input type="text" id="apiUrl" value="https://tourpay-payment-widget.onrender.com" placeholder="https://your-api-url.com">
+        </div>
+
+        <div id="statusMessage" class="status"></div>
+
+        <div class="form-group">
+            <label for="jwtToken">JWT Token (from login):</label>
+            <input type="text" id="jwtToken" placeholder="Enter your JWT token here">
+            <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+                Get this from /api/auth/admin/login
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount to Fund:</label>
+            <input type="number" id="amount" value="100" min="1" step="1">
+        </div>
+
+        <div class="form-group">
+            <label for="currency">Currency:</label>
+            <select id="currency">
+                <option value="USD">USD (US Dollar)</option>
+                <option value="CAD" selected>CAD (Canadian Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+                <option value="GBP">GBP (British Pound)</option>
+            </select>
+        </div>
+
+        <button id="fundBtn" class="btn">Fund Wallet with Coinbase</button>
+
+        <div id="walletInfo" class="wallet-info">
+            <h3>Onramp Session Created</h3>
+            <div id="walletDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        const apiUrlInput = document.getElementById('apiUrl');
+        const jwtTokenInput = document.getElementById('jwtToken');
+        const amountInput = document.getElementById('amount');
+        const currencySelect = document.getElementById('currency');
+        const fundBtn = document.getElementById('fundBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletDetails = document.getElementById('walletDetails');
+
+        // Load saved token from localStorage
+        const savedToken = localStorage.getItem('tourpay_jwt_token');
+        if (savedToken) {
+            jwtTokenInput.value = savedToken;
+        }
+
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status ${type}`;
+            statusMessage.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function showWalletInfo(data) {
+            let html = '';
+
+            if (data.sessionId) {
+                html += `
+                    <div class="wallet-detail">
+                        <span>Session ID:</span>
+                        <span>${data.sessionId}</span>
+                    </div>
+                `;
+            }
+
+            if (data.estimatedUSDC) {
+                html += `
+                    <div class="wallet-detail">
+                        <span>Estimated USDC:</span>
+                        <span>${data.estimatedUSDC}</span>
+                    </div>
+                `;
+            }
+
+            if (data.walletAddress) {
+                html += `
+                    <div class="wallet-detail">
+                        <span>Wallet Address:</span>
+                        <span style="font-size: 12px; word-break: break-all;">${data.walletAddress}</span>
+                    </div>
+                `;
+            }
+
+            if (data.note) {
+                html += `
+                    <div class="wallet-detail" style="flex-direction: column; gap: 8px;">
+                        <span>Note:</span>
+                        <span style="font-size: 12px; color: #856404;">${data.note}</span>
+                    </div>
+                `;
+            }
+
+            walletDetails.innerHTML = html;
+            walletInfo.style.display = 'block';
+        }
+
+        async function fundWallet() {
+            const apiUrl = apiUrlInput.value.trim();
+            const jwtToken = jwtTokenInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const currency = currencySelect.value;
+
+            // Validation
+            if (!apiUrl) {
+                showStatus('Please enter API URL', 'error');
+                return;
+            }
+
+            if (!jwtToken) {
+                showStatus('Please enter JWT token', 'error');
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                showStatus('Please enter a valid amount', 'error');
+                return;
+            }
+
+            // Save token to localStorage
+            localStorage.setItem('tourpay_jwt_token', jwtToken);
+
+            // Disable button
+            fundBtn.disabled = true;
+            fundBtn.innerHTML = '<span class="loading"></span> Creating Onramp Session...';
+            walletInfo.style.display = 'none';
+            showStatus('Creating Coinbase Onramp session...', 'info');
+
+            try {
+                // Step 1: Try to create wallet first (in case it doesn't exist)
+                try {
+                    const createWalletResponse = await fetch(`${apiUrl}/api/wallet/create`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const createWalletData = await createWalletResponse.json();
+                    if (createWalletData.success) {
+                        console.log('Wallet created:', createWalletData);
+                    }
+                } catch (error) {
+                    // Wallet might already exist, continue
+                    console.log('Wallet creation skipped (might already exist)');
+                }
+
+                // Step 2: Initiate Coinbase Onramp
+                const fundResponse = await fetch(`${apiUrl}/api/wallet/fund`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        currency: currency
+                    })
+                });
+
+                const fundData = await fundResponse.json();
+
+                if (fundData.success && fundData.onrampUrl) {
+                    showStatus('Onramp session created! Redirecting to Coinbase...', 'success');
+                    showWalletInfo(fundData);
+
+                    // Redirect to Coinbase Onramp after 2 seconds
+                    setTimeout(() => {
+                        window.open(fundData.onrampUrl, '_blank');
+                    }, 2000);
+                } else {
+                    showStatus(`Error: ${fundData.error || fundData.message || 'Failed to create onramp session'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`Network error: ${error.message}`, 'error');
+            } finally {
+                fundBtn.disabled = false;
+                fundBtn.textContent = 'Fund Wallet with Coinbase';
+            }
+        }
+
+        fundBtn.addEventListener('click', fundWallet);
+
+        // Allow Enter key in amount input
+        amountInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fundWallet();
+            }
+        });
+
+        // Show initial instructions
+        showStatus('Enter your JWT token and amount to fund your wallet', 'info');
+    </script>
+</body>
+</html>
