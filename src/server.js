@@ -12,9 +12,9 @@ const pool = require('./config/database');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 const leadsRoutes = require('./routes/leadsRoutes');
+const walletRoutes = require('./routes/walletRoutes');
 
 // TODO: Uncomment these when controllers are implemented
-// const walletRoutes = require('./routes/walletRoutes');
 // const tokenRoutes = require('./routes/tokenRoutes');
 // const bookingRoutes = require('./routes/bookingRoutes');
 // const paymentRoutes = require('./routes/paymentRoutes');
@@ -85,9 +85,9 @@ app.get('/health', (req, res) => {
 app.use('/api/auth/admin', adminAuthRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/leads', leadsRoutes);
+app.use('/api/wallet', walletRoutes);
 
 // TODO: Uncomment these when controllers are implemented
-// app.use('/api/wallet', walletRoutes);
 // app.use('/api/tokens', tokenRoutes);
 // app.use('/api/bookings', bookingRoutes);
 // app.use('/api/payments', paymentRoutes);
