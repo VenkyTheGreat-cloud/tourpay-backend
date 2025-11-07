@@ -103,6 +103,40 @@ app.get('/', (req, res) => {
   });
 });
 
+// Test endpoint for Coinbase Onramp (no auth required - for testing only)
+app.post('/api/test/coinbase-onramp', async (req, res) => {
+  try {
+    const coinbaseService = require('./services/coinbaseService');
+    const { v4: uuidv4 } = require('uuid');
+
+    const { amount = 100, currency = 'CAD', walletAddress } = req.body;
+
+    // Use provided wallet or generate test wallet
+    const testWalletAddress = walletAddress || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb';
+
+    const onrampSession = await coinbaseService.createOnrampSession({
+      userId: uuidv4(),
+      destinationWalletAddress: testWalletAddress,
+      amount,
+      currency
+    });
+
+    res.json({
+      success: true,
+      message: 'Coinbase Onramp session created (test mode - no auth)',
+      ...onrampSession,
+      walletAddress: testWalletAddress,
+      testMode: true
+    });
+  } catch (error) {
+    logger.error('Error in test onramp endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
